@@ -106,8 +106,8 @@ def main(args: List[str]):
 
     image = io.read_png(img_path)
     height, width = image.shape[:-1]
-    bug_width = max(bug_width * width, 1)
-    wall_width = max(wall_width * width, 2)
+    bug_width = max(bug_width * width, 3)
+    wall_width = max(wall_width * width, 6)
 
     vp_image = Image(data=image, method='auto')
     canvas = SceneCanvas(keys='interactive', size=(width, height), bgcolor=Color(bg_color))
