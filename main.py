@@ -225,23 +225,23 @@ def main(args: List[str]):
         io.write_png(f"frames/frame{frame}.png", img)
         frame += 1
 
-    print("Combining files, this is the last step...")
+    print("\nCombining files, this is the last step...")
     pbar = tqdm(total=5)
-    print("Composing music...")
+    print("\nComposing music...")
     fs = Popen(sh_split("fluidsynth -F \"build-up.wav\" ./soundfonts/Xylophone.sf2 ./build-up.mid"))
     fs.wait()
     pbar.update()
-    print("Merging sound files...")
+    print("\nMerging sound files...")
     merger_cmd = "ffmpeg -hide_banner -loglevel panic -y -i build-up.wav -i transform_noise.wav -filter_complex '[0:0][1:0]concat=n=2:v=0:a=1[out]' -map '[out]' build-up-transform.wav"
     merger = Popen(sh_split(merger_cmd))
     merger.wait()
     pbar.update()
-    print("Merging frames...")
+    print("\nMerging frames...")
     render_cmd = f"ffmpeg -hide_banner -loglevel panic -framerate 60 -y -i ./frames/frame%d.png -i build-up-transform.wav -c:v libvpx-vp9 -pix_fmt yuva420p -vf scale=1920:1080 out.webm"
     render = Popen(sh_split(render_cmd))
     render.wait()
     pbar.update()
-    print("Merging video files... (this takes ages)")
+    print("\nMerging video files... (this takes ages)")
     merger2_cmd = f"ffmpeg -y -hide_banner -loglevel panic -c:v libvpx-vp9 -i out.webm -c:v libvpx-vp9 -i stick_bug_dancing.webm -filter_complex '[0:0][0:1][1:0][1:1]concat=n=2:v=1:a=1[outv][outa]' -map '[outv]' -map '[outa]' {output_path}"
     merger2 = Popen(sh_split(merger2_cmd))
     merger2.wait()
@@ -251,7 +251,7 @@ def main(args: List[str]):
     for f in old_frames:
         os.remove(f)
     pbar.update()
-    print("All done!")
+    print("\nAll done!")
     pass
 
 
