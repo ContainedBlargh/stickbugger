@@ -139,6 +139,8 @@ def main(args: List[str]):
     ref_wall = to_numpy_arr(reference_data["wall_line"], width, height)
     m = len(ref_msticks)
 
+    print("Balancing sticks...")
+
     if n < m:
         i = 0
         while n < m:
@@ -161,10 +163,10 @@ def main(args: List[str]):
     src_sticks = list(zip(*src_msticks))[1]
     ref_sticks = list(zip(*ref_msticks))[1]
 
-    # All are square matrices, thus, we can determine the path with linear algebra.
-
     pairs = list(zip(src_sticks, ref_sticks))
     sticks = [to_vispy_line(stick) for stick in src_sticks]
+
+    print("Rendering initial sticks and playing the Xylophone...")
 
     for i, stick in enumerate(sticks):
         for _ in range(15):
@@ -180,7 +182,8 @@ def main(args: List[str]):
         time += duration * 2
         m_idx += 1
 
-    midi.addNote(track, channel, 0, time + 1, duration, 0)
+    midi.addNote(track, channel, m_idx + 1, time + 0.5, duration, volume)
+    midi.addNote(track, channel, 0, time + duration, duration, volume)
 
     with open("build-up.mid", "wb") as output_file:
         midi.writeFile(output_file)
@@ -193,7 +196,7 @@ def main(args: List[str]):
     wall = to_vispy_line(src_wall, ln_color=wall_color, ln_width=wall_width)
     view.add(wall)
 
-    for i in range(60):
+    for i in tqdm(range(60)):
         img = canvas.render()
         io.write_png(f"frames/frame{frame}.png", img)
         frame += 1
@@ -215,21 +218,28 @@ def main(args: List[str]):
         io.write_png(f"frames/frame{frame}.png", img)
         frame += 1
 
+    print("Combining files, this is the last step...")
+    pbar = tqdm(total=5)
     fs = Popen(sh_split("fluidsynth -F \"build-up.wav\" ./soundfonts/Xylophone.sf2 ./build-up.mid"))
     fs.wait()
+    pbar.update()
     merger_cmd = "ffmpeg -hide_banner -loglevel panic -y -i build-up.wav -i transform_noise.wav -filter_complex '[0:0][1:0]concat=n=2:v=0:a=1[out]' -map '[out]' build-up-transform.wav"
     merger = Popen(sh_split(merger_cmd))
     merger.wait()
+    pbar.update()
     render_cmd = f"ffmpeg -hide_banner -loglevel panic -framerate 60 -y -i ./frames/frame%d.png -i build-up-transform.wav -c:v libvpx-vp9 -pix_fmt yuva420p -vf scale=1920:1080 out.webm"
     render = Popen(sh_split(render_cmd))
     render.wait()
+    pbar.update()
     merger2_cmd = f"ffmpeg -y -hide_banner -loglevel panic -c:v libvpx-vp9 -i out.webm -c:v libvpx-vp9 -i stick_bug_dancing.webm -filter_complex '[0:0][0:1][1:0][1:1]concat=n=2:v=1:a=1[outv][outa]' -map '[outv]' -map '[outa]' {output_path}"
     merger2 = Popen(sh_split(merger2_cmd))
     merger2.wait()
+    pbar.update()
 
     old_frames = glob.glob("./frames/*")
     for f in old_frames:
         os.remove(f)
+    pbar.update()
     pass
 
 
