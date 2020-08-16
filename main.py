@@ -55,9 +55,15 @@ def to_numpy_arr(stick: dict, width: float, height: float) -> np.ndarray:
 
 def to_vispy_line(
         coords: np.ndarray,
-        ln_color: str = bug_color,
-        ln_width: int = bug_width
+        ln_color: str = None,
+        ln_width: int = None
 ) -> Line:
+    global bug_color
+    global bug_width
+    if ln_color is None:
+        ln_color = bug_color
+    if ln_width is None:
+        ln_width = bug_width
     return Line(
         pos=coords,
         color=Color(ln_color),
@@ -106,7 +112,7 @@ def main(args: List[str]):
 
     image = io.read_png(img_path)
     height, width = image.shape[:-1]
-    bug_width = max(bug_width * width, 3)
+    bug_width = max(bug_width * width, 4)
     wall_width = max(wall_width * width, 6)
 
     vp_image = Image(data=image, method='auto')
